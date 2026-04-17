@@ -1,15 +1,11 @@
-self.addEventListener('install', e=>{
-  e.waitUntil(
-    caches.open('app').then(cache=>{
-      return cache.addAll(['./','./index.html']);
-    })
-  );
+self.addEventListener('install', e => {
+  self.skipWaiting();
 });
 
-self.addEventListener('fetch', e=>{
-  e.respondWith(
-    caches.match(e.request).then(res=>{
-      return res || fetch(e.request);
-    })
-  );
+self.addEventListener('activate', e => {
+  return self.clients.claim();
+});
+
+self.addEventListener('fetch', e => {
+  e.respondWith(fetch(e.request));
 });
