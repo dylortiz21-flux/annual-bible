@@ -8,8 +8,8 @@
 <link rel="manifest" href="manifest.json"/>
 
 <style>
+*{margin:0;padding:0;box-sizing:border-box;}
 body{
-  margin:0;
   background:#0d1117;
   color:#e6edf3;
   font-family:Georgia, serif;
@@ -27,9 +27,7 @@ body{
   animation:fadeOut 1s ease forwards;
   animation-delay:2s;
 }
-@keyframes fadeOut{
-  to{opacity:0;visibility:hidden;}
-}
+@keyframes fadeOut{to{opacity:0;visibility:hidden;}}
 
 /* HEADER */
 .header{
@@ -40,8 +38,21 @@ body{
   font-size:12px;
 }
 
+/* LISTA */
+.day{
+  padding:12px;
+  margin:10px;
+  border-radius:10px;
+  background:#161b22;
+  cursor:pointer;
+}
+.done{
+  text-decoration:line-through;
+  color:#56d364;
+}
+
 /* MENSAJE */
-.mensaje{
+.msg{
   position:fixed;
   top:70px;
   left:50%;
@@ -49,22 +60,17 @@ body{
   background:#238636;
   padding:10px;
   border-radius:10px;
-  font-size:13px;
 }
 
-/* MODO CLARO AUTO */
+/* LIGHT MODE */
 @media (prefers-color-scheme: light){
-  body{
-    background:#fff;
-    color:#111;
-  }
+  body{background:#fff;color:#111;}
 }
 </style>
 </head>
 
 <body>
 
-<!-- SPLASH -->
 <div id="splash">
   <div>
     <h1>📖 Annual Bible</h1>
@@ -77,99 +83,86 @@ body{
   <div class="streak">🔥 Racha: <span id="streak">0</span> días</div>
 </div>
 
+<div id="list"></div>
+
 <script>
-// =================
+
 // SERVICE WORKER
-// =================
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js');
 }
 
-// =================
+// GENERAR PLAN SIMPLE (365 días)
+const list=document.getElementById("list");
+let completed=JSON.parse(localStorage.getItem("done")||"{}");
+
+for(let i=1;i<=365;i++){
+  const div=document.createElement("div");
+  div.className="day"+(completed[i]?" done":"");
+  div.innerText="Día "+i+" - Lectura bíblica";
+
+  div.onclick=()=>{
+    completed[i]=!completed[i];
+    localStorage.setItem("done",JSON.stringify(completed));
+    location.reload();
+  };
+
+  list.appendChild(div);
+}
+
 // RACHA
-// =================
 function getHoy(){
   return new Date().toISOString().split("T")[0];
 }
 
 function updateStreak(){
-  let streak = parseInt(localStorage.getItem("streak")||"0");
-  let lastDay = localStorage.getItem("lastDay");
-  let hoy = getHoy();
+  let streak=parseInt(localStorage.getItem("streak")||"0");
+  let lastDay=localStorage.getItem("lastDay");
+  let hoy=getHoy();
 
-  if(lastDay !== hoy){
-    let ayer = new Date();
+  if(lastDay!==hoy){
+    let ayer=new Date();
     ayer.setDate(ayer.getDate()-1);
-    ayer = ayer.toISOString().split("T")[0];
+    ayer=ayer.toISOString().split("T")[0];
 
-    if(lastDay === ayer){
-      streak++;
-    }else{
-      streak = 1;
-    }
+    if(lastDay===ayer){streak++;}else{streak=1;}
 
-    localStorage.setItem("streak", streak);
-    localStorage.setItem("lastDay", hoy);
+    localStorage.setItem("streak",streak);
+    localStorage.setItem("lastDay",hoy);
   }
 
-  document.getElementById("streak").textContent = streak;
+  document.getElementById("streak").innerText=streak;
 }
 
-// =================
 // MENSAJES
-// =================
 const mensajes=[
 "Hoy es un buen día para acercarte a Dios 🙌",
 "La constancia vale más que la perfección 💪",
 "Cada día cuenta 🔥",
 "Dios ve tu esfuerzo ❤️",
-"Seguí firme 🙏",
-"Tu disciplina hoy es tu recompensa mañana ✨"
+"Seguí firme 🙏"
 ];
 
-function mostrarMensaje(){
-  const hoy = new Date().getDate();
-  const msg = mensajes[hoy % mensajes.length];
-
+function mensaje(){
+  const m=mensajes[new Date().getDate()%mensajes.length];
   const div=document.createElement("div");
-  div.className="mensaje";
-  div.innerText=msg;
-
+  div.className="msg";
+  div.innerText=m;
   document.body.appendChild(div);
   setTimeout(()=>div.remove(),4000);
 }
 
-// =================
-// NOTIFICACIÓN 7 AM
-// =================
+// NOTIFICACIÓN (solo cuando abrís la app)
 function pedirPermiso(){
   if("Notification" in window){
     Notification.requestPermission();
   }
 }
 
-function programarNotificacion(){
-  if(Notification.permission !== "granted") return;
-
-  function checkHora(){
-    const now = new Date();
-    if(now.getHours() === 7 && now.getMinutes() === 0){
-      new Notification("📖 Annual Bible",{
-        body:"Es hora de tu lectura 🙌"
-      });
-    }
-  }
-
-  setInterval(checkHora,60000);
-}
-
-// =================
 // INIT
-// =================
 updateStreak();
-mostrarMensaje();
+mensaje();
 pedirPermiso();
-programarNotificacion();
 
 // SPLASH REMOVE
 setTimeout(()=>{
